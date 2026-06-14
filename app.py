@@ -363,8 +363,11 @@ elif menu == "Klasifikasi":
             3: "Excellent"
         }
 
-        st.success(
-            f"Hasil Prediksi: {label.get(hasil, 'Unknown')}"
+        st.markdown("## 🎯 Hasil Prediksi")
+
+        st.metric(
+            label="Kategori Kualitas Udara",
+            value=label.get(hasil, "Unknown")
         )
 
 
