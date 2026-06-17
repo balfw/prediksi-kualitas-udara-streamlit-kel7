@@ -57,16 +57,16 @@ if menu == "Home":
             "Neural Network"
         ],
         "Accuracy": [
-            0.95,
-            0.96,
-            0.97,
-            0.98
+            0.86,
+            0.90,
+            0.93,
+            0.92
         ],
         "Accuracy HPO": [
-            0.95,
-            0.96,
-            0.97,
-            0.98
+            0.83,
+            0.91,
+            0.89,
+            0.89
         ]
     })
     
@@ -92,16 +92,16 @@ if menu == "Home":
             "Neural Network"
         ],
         "Accuracy": [
-            0.95,
-            0.96,
-            0.97,
-            0.98
+            0.98,
+            0.-82,
+            0.99,
+            0.99
         ],
         "Accuracy HPO": [
-            0.95,
-            0.96,
-            0.97,
-            0.98
+            0.98,
+            0.-83,
+            0.99,
+            0.99
         ]
     })
     
@@ -162,7 +162,7 @@ elif menu == "EDA":
 
     air_quality_counts = df["Air Quality"].value_counts().sort_index()
 
-    fig, ax = plt.subplots(figsize=(8, 5))
+    fig, ax = plt.subplots(figsize=(7, 4))
 
     warna = [
         "#ef4444",  # merah
@@ -210,7 +210,7 @@ elif menu == "EDA":
     # Heatmap
     st.subheader("🔥 Heatmap Korelasi")
 
-    fig, ax = plt.subplots(figsize=(8, 6))
+    fig, ax = plt.subplots(figsize=(6, 3))
 
     sns.heatmap(
         df.corr(numeric_only=True),
@@ -228,7 +228,7 @@ elif menu == "EDA":
     # Scatter Plot
     st.subheader("📍 Scatter Plot PM2.5 vs PM10")
 
-    fig2, ax2 = plt.subplots(figsize=(8, 5))
+    fig2, ax2 = plt.subplots(figsize=(6, 3))
 
     ax2.scatter(
         df["PM2.5"],
@@ -287,7 +287,6 @@ elif menu == "Klasifikasi":
         "SVM": "modelJb_SVM.joblib",
         "Neural Network": "modelJb_NN.joblib"
     }
-
     pilihan = st.selectbox(
         "Pilih Model Klasifikasi",
         list(model_map.keys())
@@ -341,20 +340,25 @@ elif menu == "Klasifikasi":
         "Menunjukkan kedekatan lokasi dengan kawasan industri. Semakin dekat biasanya tingkat polusi lebih tinggi."
         )
 
-    if st.button("Prediksi Kualitas Udara"):
+    if st.button("🔍 Prediksi Kualitas Udara"):
+        
+        # Data input
+        input_df = pd.DataFrame(
+            [[temperature, humidity, pm2_5, pm10, no2, so2, co, proximity]],
+            columns=[
+                "Temperature",
+                "Humidity",
+                "PM2.5",
+                "PM10",
+                "NO2",
+                "SO2",
+                "CO",
+                "Proximity_to_Industrial_Areas"
+            ]
+        )
 
-        data = np.array([[
-            temperature,
-            humidity,
-            pm2_5,
-            pm10,
-            no2,
-            so2,
-            co,
-            proximity
-        ]])
-
-        hasil = model.predict(data)[0]
+        # Prediksi
+        prediction = model.predict(input_df)[0]
 
         label = {
             0: "Poor",
@@ -363,12 +367,80 @@ elif menu == "Klasifikasi":
             3: "Excellent"
         }
 
-        st.markdown("## 🎯 Hasil Prediksi")
+        prediction_label = label.get(int(prediction), prediction)
 
-        st.metric(
-            label="Kategori Kualitas Udara",
-            value=label.get(hasil, "Unknown")
+        # Menampilkan data input
+        st.subheader("📋 Data Input")
+
+        st.dataframe(
+            input_df,
+            use_container_width=True
         )
+
+        # Hasil prediksi
+        st.subheader("🎯 Hasil Prediksi")
+
+        st.success(
+            f"Hasil prediksi menggunakan model {pilihan}: {prediction_label}"
+        )
+        
+        # Probabilitas
+        if hasattr(model, "predict_proba"):
+
+            proba = model.predict_proba(input_df)[0]
+            hasil_download = input_df.copy()
+
+            hasil_download["Model"] = pilihan
+            hasil_download["Hasil Prediksi"] = prediction_label
+
+            hasil_download["Prob_Poor"] = proba[0]
+            hasil_download["Prob_Moderate"] = proba[1]
+            hasil_download["Prob_Good"] = proba[2]
+            hasil_download["Prob_Excellent"] = proba[3]
+
+            if hasattr(model, "classes_"):
+                class_names = [
+                    label.get(int(cls), str(cls))
+                    for cls in model.classes_
+                ]
+            else:
+                class_names = [
+                    f"Class {i}"
+                    for i in range(len(proba))
+                ]
+
+            proba_df = pd.DataFrame({
+                "Kategori": class_names,
+                "Probabilitas": proba
+            })
+
+            st.subheader("📊 Probabilitas Prediksi")
+
+            st.dataframe(
+                proba_df,
+                use_container_width=True
+            )
+
+        else:
+            st.info(
+                "Model ini tidak mendukung probabilitas prediksi."
+            )
+
+        # File hasil download
+        hasil_download = input_df.copy()
+
+        hasil_download["Model"] = pilihan
+        hasil_download["Hasil Prediksi"] = prediction_label
+
+        csv = hasil_download.to_csv(index=False)
+
+        st.download_button(
+            label="Download Hasil Prediksi",
+            data=csv,
+            file_name="hasil_prediksi.csv",
+            mime="text/csv"
+        )
+   
 
 
 # Halaman Regresi
@@ -393,9 +465,9 @@ elif menu == "Regresi":
     """)
 
     reg_map = {
-        "SVM-HPO": "modelJb_SVM-HPO.joblib",
-        "Neural Network-HPO": "modelJb_NN-HPO.joblib",
-        "Neural Network": "modelJb_NN.joblib"
+    "SVM Regressor": "modelJb_SVMRegressor.joblib",
+    "SVM Regressor HPO": "modelJb-HPO_SVMRegressor.joblib",
+    "Neural Network Regressor": "modelJb_NNRegressor.joblib",
     }
 
     regresi_model = st.selectbox(
@@ -406,6 +478,7 @@ elif menu == "Regresi":
     model_regresi = load_model(
         reg_map[regresi_model]
     )
+
 
     st.success(
         f"Model Regresi Aktif: {regresi_model}"
@@ -442,33 +515,83 @@ elif menu == "Regresi":
         st.caption(
         " Carbon Monoxide merupakan gas beracun yang banyak dihasilkan kendaraan bermotor."
         )
-        
-        proximity = st.number_input(
-            "Proximity_to_Industrial_Areas"
-        )
+        pm25 = st.number_input("PM2.5")
         st.caption(
         "Menunjukkan kedekatan lokasi dengan kawasan industri. Semakin dekat biasanya tingkat polusi lebih tinggi."
         )
 
-    if st.button("Prediksi PM2.5"):
+    if st.button("📈 Prediksi PM2.5"):
 
-        data = np.array([[
-            temperature,
-            humidity,
-            pm10,
-            no2,
-            so2,
-            co,
-            proximity
-        ]])
+        input_df = pd.DataFrame(
+                [[
+                    temperature,
+                    humidity,
+                    pm25,
+                    pm10,
+                    no2,
+                    so2,
+                    co
+                ]],
+                columns=[
+                    "Temperature",
+                    "Humidity",
+                    "PM2.5",
+                    "PM10",
+                    "NO2",
+                    "SO2",
+                    "CO"
+                ]
 
-        hasil = model_regresi.predict(data)[0]
 
-        st.success(
-            f"Hasil Prediksi PM2.5 : {hasil:.2f}"
         )
-        
-        # ==========================================
+        # st.write("Kolom input_df:")
+        # st.write(list(input_df.columns))
+
+        # st.write("Kolom model:")
+        # st.write(list(model_regresi.feature_names_in_))
+        hasil = model_regresi.predict(input_df)[0]
+
+        st.subheader("📋 Data Input")
+        st.dataframe(input_df)
+
+        st.subheader("📈 Hasil Prediksi PM2.5")
+        st.success(f"Hasil Prediksi PM2.5: {hasil:.2f}")
+
+        # Metric Card
+        st.metric(
+            label="Nilai Prediksi PM2.5",
+            value=f"{hasil:.2f}"
+        )
+
+        # Interpretasi
+        st.subheader("📝 Interpretasi")
+
+        if hasil <= 12:
+            st.success("Kualitas udara baik (Good)")
+        elif hasil <= 35.4:
+            st.info("Kualitas udara sedang (Moderate)")
+        elif hasil <= 55.4:
+            st.warning("Kualitas udara tidak sehat bagi kelompok sensitif")
+        elif hasil <= 150.4:
+            st.warning("Kualitas udara tidak sehat")
+        else:
+            st.error("Kualitas udara sangat tidak sehat")
+
+        # Download hasil
+        hasil_download = input_df.copy()
+
+        hasil_download["Model"] = regresi_model
+        hasil_download["Prediksi_PM2.5"] = round(hasil, 2)
+
+        csv = hasil_download.to_csv(index=False)
+
+        st.download_button(
+            label="⬇ Download Hasil Prediksi PM2.5",
+            data=csv,
+            file_name="hasil_prediksi_pm25.csv",
+            mime="text/csv"
+        )
+# ==========================================
 # HALAMAN PREDIKSI CSV
 # ==========================================
 elif menu == "Prediksi CSV":
@@ -477,33 +600,66 @@ elif menu == "Prediksi CSV":
 
     st.markdown("""
     Upload file CSV atau Excel yang berisi data kualitas udara.
-    
+
     Sistem akan melakukan prediksi otomatis untuk seluruh data
-    menggunakan model klasifikasi yang dipilih.
+    menggunakan model regresi yang dipilih.
     """)
 
     model_csv = st.selectbox(
-        "Pilih Model",
+        "Pilih Model Regresi",
         [
-            "KNN",
-            "Decision Tree",
-            "SVM",
-            "Neural Network"
+            "modelJb_SVMRegressor.joblib",
+            "modelJb_SVMRegressor-HPO.joblib",
+            "modelJb_NNRegressor.joblib"
         ]
     )
 
-    # Load model
-    if model_csv == "KNN":
-        model = load_model("modelJb_KNN.joblib")
+    model = load_model(model_csv)
+    st.markdown("---")
 
-    elif model_csv == "Decision Tree":
-        model = load_model("modelJb_DS.joblib")
+    st.subheader("📖 Informasi Dataset")
 
-    elif model_csv == "SVM":
-        model = load_model("modelJb_SVM.joblib")
+    st.write("""
+    Dataset ini berisi data kualitas udara yang digunakan untuk melakukan
+    prediksi nilai PM2.5 menggunakan algoritma Machine Learning.
 
-    elif model_csv == "Neural Network":
-        model = load_model("modelJb_NN.joblib")
+    Model yang tersedia:
+    - SVM Regressor
+    - SVM Regressor HPO
+    - Neural Network Regressor
+
+    Target prediksi:
+    - PM2.5 (Particulate Matter 2.5)
+    """)
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        st.markdown("### Kolom Input")
+
+        st.markdown("""
+    - **Temperature** : Suhu udara lingkungan (°C).
+    - **Humidity** : Tingkat kelembaban udara (%).
+    - **PM2.5** : Konsentrasi partikel udara berukuran ≤ 2.5 pm.
+    - **PM10** : Konsentrasi partikel udara berukuran ≤ 10 pm.
+        """)
+
+    with col2:
+        st.markdown("### Kolom Input")
+
+        st.markdown("""
+    - **NO2** : Nitrogen Dioxide dari kendaraan dan industri.
+    - **SO2** : Sulfur Dioxide dari pembakaran bahan bakar.
+    - **CO** : Carbon Monoxide hasil emisi kendaraan.
+        """)
+
+    st.info("""
+    📌 File CSV/Excel yang diupload harus memiliki kolom:
+
+    Temperature, Humidity, PM2.5, PM10, NO2, SO2, CO
+    """)
+
+    st.markdown("---")
 
     uploaded_file = st.file_uploader(
         "Upload CSV / Excel",
@@ -511,70 +667,100 @@ elif menu == "Prediksi CSV":
     )
 
     if uploaded_file is not None:
-
-        # Baca file
+        # Cek ekstensi file untuk menentukan cara membaca
         if uploaded_file.name.endswith(".csv"):
             data = pd.read_csv(uploaded_file)
         else:
             data = pd.read_excel(uploaded_file)
 
-        st.subheader("Preview Dataset")
+        st.subheader("📋 Preview Dataset")
         st.dataframe(data.head())
 
         st.write(f"Jumlah Data : {len(data)}")
 
-        if st.button("Prediksi Semua Data"):
-            # hapus kolom target jika ada
-            if "Air Quality" in data.columns:
-                data = data.drop(columns=["Air Quality"])
+    if "hasil_prediksi_csv" not in st.session_state:
+        st.session_state.hasil_prediksi_csv = None
 
-            fitur_model = [
-                "Temperature",
-                "Humidity",
-                "PM2.5",
-                "PM10",
-                "NO2",
-                "SO2",
-                "CO",
-                "Proximity_to_Industrial_Areas"
-            ]
+    if st.button("📈 Prediksi Semua Data"):
 
-            # cek kolom wajib
-            if not all(col in data.columns for col in fitur_model):
-                st.error(
-                    "File CSV tidak sesuai. Pastikan memiliki kolom:\n\n"
-                    + ", ".join(fitur_model)
-                )
-                st.stop()
+        if uploaded_file is None:
+            st.error("Silakan upload file CSV/Excel terlebih dahulu.")
+            st.stop()
 
-            # ambil hanya kolom yang dipakai model
-            data_prediksi = data[fitur_model]
+        fitur_model = [
+            "Temperature",
+            "Humidity",
+            "PM2.5",
+            "PM10",
+            "NO2",
+            "SO2",
+            "CO"
+        ]
 
-            hasil = model.predict(data_prediksi)
+        if not all(col in data.columns for col in fitur_model):
+            st.error(
+                "Kolom pada file tidak sesuai.\n\n"
+                + ", ".join(fitur_model)
+            )
+            st.stop()
 
-            label = {
-                0: "Poor",
-                1: "Moderate",
-                2: "Good",
-                3: "Excellent"
-            }
+        data_prediksi = data[fitur_model]
+        hasil = model.predict(data_prediksi)
+        hasil_df = data.copy()
+        hasil_df["Prediksi_PM2.5"] = hasil
+        st.session_state.hasil_prediksi_csv = hasil_df.copy()
 
-            data["Prediksi"] = [
-                label.get(x, x)
-                for x in hasil
-            ]
+        if st.session_state.hasil_prediksi_csv is not None:
+            st.success("✅ Prediksi berhasil dilakukan")
+            st.subheader("📊 Hasil Prediksi")
+            st.dataframe(
+                st.session_state.hasil_prediksi_csv,
+                use_container_width=True
+            )
 
-            st.success("Prediksi Berhasil")
+        st.markdown("---")
 
-            st.dataframe(data)
+        col1, col2, col3, col4 = st.columns(4)
 
-            csv = data.to_csv(
+        with col1:
+
+            csv = st.session_state.hasil_prediksi_csv.to_csv(
                 index=False
             ).encode("utf-8")
 
             st.download_button(
-                label="⬇ Download Hasil Prediksi",
+                label="💾 Simpan Hasil Prediksi",
                 data=csv,
-                file_name="hasil_prediksi.csv",
-                mime="text/csv"
+                file_name="hasil_prediksi_pm25.csv",
+                mime="text/csv",
+                use_container_width=True
             )
+
+        with col2:
+
+            if st.button(
+                "➕ Tambah Prediksi Baru",
+                use_container_width=True
+            ):
+
+                st.session_state.hasil_prediksi_csv = None
+                st.rerun()
+
+        with col3:
+
+            st.metric(
+                "Jumlah Data",
+                len(st.session_state.hasil_prediksi_csv)
+            )
+
+        with col4:
+
+            st.metric(
+                "Rata-rata PM2.5",
+                round(
+                    st.session_state.hasil_prediksi_csv[
+                        "Prediksi_PM2.5"
+                    ].mean(),
+                    2
+                )
+            ) 
