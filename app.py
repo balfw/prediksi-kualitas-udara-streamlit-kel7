@@ -863,33 +863,32 @@ if uploaded_file is not None:
             for x in hasil
         ]
 
-        st.session_state.hasil_klasifikasi = hasil_df
-        
         if "hasil_klasifikasi" not in st.session_state:
             st.session_state.hasil_klasifikasi = None
 
-        if st.session_state.hasil_klasifikasi is not None:
+            st.session_state.hasil_klasifikasi = hasil_df
 
-            st.success("✅ Prediksi berhasil")
+            if st.session_state.hasil_klasifikasi is not None:
 
-            st.subheader("📊 Hasil Prediksi")
+                st.success("✅ Prediksi berhasil")
 
-            st.dataframe(
-                st.session_state.hasil_klasifikasi,
-                use_container_width=True
-            )
-            st.subheader(
-            "📈 Distribusi Hasil Prediksi"
-)
+                st.subheader("📊 Hasil Prediksi")
 
-summary = (
-    st.session_state.hasil_klasifikasi[
-        "Prediksi_Air_Quality"
-    ]
-    .value_counts()
-)
+                st.dataframe(
+                    st.session_state.hasil_klasifikasi,
+                    use_container_width=True
+                )
 
-st.bar_chart(summary)
+                st.subheader("📈 Distribusi Hasil Prediksi")
+
+                summary = (
+                    st.session_state.hasil_klasifikasi[
+                        "Prediksi_Air_Quality"
+                    ]
+                    .value_counts()
+                )
+
+                st.bar_chart(summary)
 csv = (
     st.session_state.hasil_klasifikasi
     .to_csv(index=False)
