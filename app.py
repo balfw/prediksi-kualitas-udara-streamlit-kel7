@@ -14,7 +14,7 @@ def load_model(path):
     return joblib.load(path)
 
 # Sidebar
-menu = st.sidebar.selectbox("Pilih Menu", ["Home", "EDA", "Klasifikasi", "Regresi", "Prediksi CSV"])
+menu = st.sidebar.selectbox("Pilih Menu", ["Home", "EDA", "Klasifikasi", "Prediksi CSV Klasifikasi", "Prediksi CSV Klasifikasi"])
 
 # Load Dataset
 df = pd.read_csv("DatasetPolutionScaling.csv")
