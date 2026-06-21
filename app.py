@@ -4,7 +4,7 @@ import joblib
 import numpy as np
 import matplotlib.pyplot as plt # Diperlukan untuk visualisasi
 import seaborn as sns
-import plotly.express as px
+import plotly.express as px 
 
 # Konfigurasi Halaman
 st.set_page_config(page_title="Prediksi Kualitas Udara", page_icon="🌍", layout="wide")
@@ -883,18 +883,18 @@ elif menu == "Prediksi CSV Klasifikasi":
         ]
 
         fig = px.bar(
-        summary_df,
-        x="Kategori",
-        y="Jumlah",
-        color="Kategori",
-        text="Jumlah",
-        color_discrete_map={
-            "Poor": "#ff4b4b",        # merah
-            "Moderate": "#ffa500",    # oranye
-            "Good": "#00cc66",        # hijau
-            "Excellent": "#3399ff"    # biru
-        }
-)
+            summary_df,
+            x="Kategori",
+            y="Jumlah",
+            color="Kategori",
+            text="Jumlah",
+            color_discrete_map={
+                "Poor": "#FF4B4B",
+                "Moderate": "#FFA500",
+                "Good": "#00CC66",
+                "Excellent": "#3399FF"
+            }
+        )
 
         fig.update_traces(
             textposition="outside"
