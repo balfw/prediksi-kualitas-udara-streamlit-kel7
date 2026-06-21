@@ -14,7 +14,7 @@ def load_model(path):
     return joblib.load(path)
 
 # Sidebar
-menu = st.sidebar.selectbox("Pilih Menu", ["Home", "EDA", "Klasifikasi", "Prediksi CSV Klasifikasi", "Prediksi CSV Klasifikasi"])
+menu = st.sidebar.selectbox("Pilih Menu", ["Home", "EDA", "Klasifikasi", "Prediksi CSV Klasifikasi", "Prediksi CSV Regresi"])
 
 # Load Dataset
 df = pd.read_csv("DatasetPolutionScaling.csv")
@@ -755,149 +755,161 @@ elif menu == "Prediksi CSV Regresi":
 
                     st.pyplot(fig)
 
-# Halaman Prediksi CSV Klasifikasi
+# ==========================================
+# HALAMAN PREDIKSI CSV KLASIFIKASI
+# ==========================================
+
 elif menu == "Prediksi CSV Klasifikasi":
+
+    if "hasil_klasifikasi" not in st.session_state:
+        st.session_state["hasil_klasifikasi"] = None
+
     st.title("📂 Prediksi CSV Klasifikasi")
 
-model_map = {
-    "Decision Tree HPO": "modelJb_DS-HPO.joblib",
-    "SVM": "modelJb_SVM.joblib",
-    "Neural Network": "modelJb_NN.joblib"
-}
+    model_map = {
+        "Decision Tree HPO": "modelJb_DS-HPO.joblib",
+        "SVM": "modelJb_SVM.joblib",
+        "Neural Network": "modelJb_NN.joblib"
+    }
 
-pilihan = st.selectbox(
-    "Pilih Model Klasifikasi",
-    list(model_map.keys())
-)
-
-model = load_model(
-    model_map[pilihan]
-)
-
-st.info("""
-Dataset harus memiliki kolom:
-
-Temperature,
-Humidity,
-PM2.5,
-PM10,
-NO2,
-SO2,
-CO,
-Proximity_to_Industrial_Areas
-""")
-
-uploaded_file = st.file_uploader(
-    "Upload CSV / Excel",
-    type=["csv", "xlsx", "xls"]
-)
-
-if uploaded_file is not None:
-
-    if uploaded_file.name.endswith(".csv"):
-        data = pd.read_csv(uploaded_file)
-    else:
-        data = pd.read_excel(uploaded_file)
-
-    st.subheader("📋 Preview Dataset")
-    st.dataframe(data.head())
-
-    st.write(
-        f"Jumlah Data : {len(data)}"
+    pilihan = st.selectbox(
+        "Pilih Model Klasifikasi",
+        list(model_map.keys())
     )
 
-    if st.button("🤖 Prediksi Semua Data"):
+    model = load_model(model_map[pilihan])
 
-        if "Air Quality" in data.columns:
-            data = data.drop(
-                columns=["Air Quality"]
-            )
+    st.info("""
+    Dataset harus memiliki kolom:
 
-        if "Population_Density" in data.columns:
-            data = data.drop(
-                columns=["Population_Density"]
-            )
+    Temperature,
+    Humidity,
+    PM2.5,
+    PM10,
+    NO2,
+    SO2,
+    CO,
+    Proximity_to_Industrial_Areas
+    """)
 
-        fitur_model = [
-            "Temperature",
-            "Humidity",
-            "PM2.5",
-            "PM10",
-            "NO2",
-            "SO2",
-            "CO",
-            "Proximity_to_Industrial_Areas"
-        ]
+    uploaded_file = st.file_uploader(
+        "Upload CSV / Excel",
+        type=["csv", "xlsx", "xls"]
+    )
 
-        if not all(
-            col in data.columns
-            for col in fitur_model
-        ):
-            st.error(
-                "Kolom dataset tidak sesuai."
-            )
-            st.stop()
+    if uploaded_file is not None:
 
-        data_prediksi = data[
-            fitur_model
-        ]
+        if uploaded_file.name.endswith(".csv"):
+            data = pd.read_csv(uploaded_file)
+        else:
+            data = pd.read_excel(uploaded_file)
 
-        hasil = model.predict(
-            data_prediksi
+        st.subheader("📋 Preview Dataset")
+        st.dataframe(data.head())
+
+        st.write(f"Jumlah Data : {len(data)}")
+
+        if st.button("🤖 Prediksi Semua Data"):
+
+            if "Air Quality" in data.columns:
+                data = data.drop(columns=["Air Quality"])
+
+            if "Population_Density" in data.columns:
+                data = data.drop(columns=["Population_Density"])
+
+            fitur_model = [
+                "Temperature",
+                "Humidity",
+                "PM2.5",
+                "PM10",
+                "NO2",
+                "SO2",
+                "CO",
+                "Proximity_to_Industrial_Areas"
+            ]
+
+            if not all(col in data.columns for col in fitur_model):
+                st.error("Kolom dataset tidak sesuai.")
+                st.stop()
+
+            data_prediksi = data[fitur_model]
+
+            hasil = model.predict(data_prediksi)
+
+            label = {
+                0: "Poor",
+                1: "Moderate",
+                2: "Good",
+                3: "Excellent"
+            }
+
+            hasil_df = data.copy()
+
+            hasil_df["Prediksi_Air_Quality"] = [
+                label.get(int(x), str(x))
+                for x in hasil
+            ]
+
+            st.session_state["hasil_klasifikasi"] = hasil_df
+
+    # ==================================
+    # TAMPILKAN HASIL
+    # ==================================
+
+    if st.session_state["hasil_klasifikasi"] is not None:
+
+        st.success("✅ Prediksi berhasil")
+
+        st.subheader("📊 Hasil Prediksi")
+
+        st.dataframe(
+            st.session_state["hasil_klasifikasi"],
+            use_container_width=True
         )
 
-        label = {
-            0: "Poor",
-            1: "Moderate",
-            2: "Good",
-            3: "Excellent"
-        }
+        st.subheader("📈 Distribusi Hasil Prediksi")
 
-        hasil_df = data.copy()
+        summary = (
+            st.session_state["hasil_klasifikasi"]
+            ["Prediksi_Air_Quality"]
+            .value_counts()
+        )
 
-        hasil_df["Prediksi_Air_Quality"] = [
-            label.get(
-                int(x),
-                str(x)
+        st.bar_chart(summary)
+
+        col1, col2, col3 = st.columns(3)
+
+        with col1:
+            st.metric(
+                "Jumlah Data",
+                len(st.session_state["hasil_klasifikasi"])
             )
-            for x in hasil
-        ]
 
-        if "hasil_klasifikasi" not in st.session_state:
-            st.session_state.hasil_klasifikasi = None
+        with col2:
+            st.metric(
+                "Kategori Terbanyak",
+                summary.idxmax()
+            )
 
-            st.session_state.hasil_klasifikasi = hasil_df
+        with col3:
+            st.metric(
+                "Jumlah Kategori Terbanyak",
+                summary.max()
+            )
 
-            if st.session_state.hasil_klasifikasi is not None:
+        csv = (
+            st.session_state["hasil_klasifikasi"]
+            .to_csv(index=False)
+            .encode("utf-8")
+        )
 
-                st.success("✅ Prediksi berhasil")
+        st.download_button(
+            label="💾 Simpan Hasil Prediksi",
+            data=csv,
+            file_name="hasil_klasifikasi.csv",
+            mime="text/csv"
+        )
 
-                st.subheader("📊 Hasil Prediksi")
-
-                st.dataframe(
-                    st.session_state.hasil_klasifikasi,
-                    use_container_width=True
-                )
-
-                st.subheader("📈 Distribusi Hasil Prediksi")
-
-                summary = (
-                    st.session_state.hasil_klasifikasi[
-                        "Prediksi_Air_Quality"
-                    ]
-                    .value_counts()
-                )
-
-                st.bar_chart(summary)
-csv = (
-    st.session_state.hasil_klasifikasi
-    .to_csv(index=False)
-    .encode("utf-8")
-)
-
-st.download_button(
-    label="💾 Simpan Hasil Prediksi",
-    data=csv,
-    file_name="hasil_klasifikasi.csv",
-    mime="text/csv"
-)
+        if st.button("➕ Prediksi Baru"):
+            st.session_state["hasil_klasifikasi"] = None
+            st.rerun()
