@@ -866,24 +866,20 @@ if uploaded_file is not None:
         st.session_state.hasil_klasifikasi = hasil_df
         
         if "hasil_klasifikasi" not in st.session_state:
-         st.session_state.hasil_klasifikasi = None
+            st.session_state.hasil_klasifikasi = None
 
         if st.session_state.hasil_klasifikasi is not None:
 
-           st.success(
-            "✅ Prediksi berhasil"
-           )
+            st.success("✅ Prediksi berhasil")
 
-        st.subheader(
-            "📊 Hasil Prediksi"
-        )
+            st.subheader("📊 Hasil Prediksi")
 
-    st.dataframe(
-        st.session_state.hasil_klasifikasi,
-        use_container_width=True
-    )
-    st.subheader(
-    "📈 Distribusi Hasil Prediksi"
+            st.dataframe(
+                st.session_state.hasil_klasifikasi,
+                use_container_width=True
+            )
+            st.subheader(
+            "📈 Distribusi Hasil Prediksi"
 )
 
 summary = (
