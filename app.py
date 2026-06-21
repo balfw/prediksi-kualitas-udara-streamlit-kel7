@@ -4,6 +4,7 @@ import joblib
 import numpy as np
 import matplotlib.pyplot as plt # Diperlukan untuk visualisasi
 import seaborn as sns
+import plotly.express as px
 
 # Konfigurasi Halaman
 st.set_page_config(page_title="Prediksi Kualitas Udara", page_icon="🌍", layout="wide")
