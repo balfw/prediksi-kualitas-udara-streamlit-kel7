@@ -592,74 +592,38 @@ elif menu == "Regresi":
             mime="text/csv"
         )
 # ==========================================
-# HALAMAN PREDIKSI CSV
+# HALAMAN PREDIKSI CSV Regresi 
 # ==========================================
-elif menu == "Prediksi CSV":
+elif menu == "Prediksi CSV Regresi":
 
-    st.title("📂 Prediksi Menggunakan CSV / Excel")
+    st.title("📂 Prediksi CSV Regresi")
 
-    st.markdown("""
-    Upload file CSV atau Excel yang berisi data kualitas udara.
+    reg_map = {
+        "SVM Regressor": "modelJb_SVMRegressor.joblib",
+        "SVM Regressor HPO": "modelJb_SVMRegressor-HPO.joblib",
+        "Neural Network Regressor": "modelJb_NNRegressor.joblib"
+    }
 
-    Sistem akan melakukan prediksi otomatis untuk seluruh data
-    menggunakan model regresi yang dipilih.
-    """)
-
-    model_csv = st.selectbox(
+    regresi_model = st.selectbox(
         "Pilih Model Regresi",
-        [
-            "modelJb_SVMRegressor.joblib",
-            "modelJb_SVMRegressor-HPO.joblib",
-            "modelJb_NNRegressor.joblib"
-        ]
+        list(reg_map.keys())
     )
 
-    model = load_model(model_csv)
-    st.markdown("---")
-
-    st.subheader("📖 Informasi Dataset")
-
-    st.write("""
-    Dataset ini berisi data kualitas udara yang digunakan untuk melakukan
-    prediksi nilai PM2.5 menggunakan algoritma Machine Learning.
-
-    Model yang tersedia:
-    - SVM Regressor
-    - SVM Regressor HPO
-    - Neural Network Regressor
-
-    Target prediksi:
-    - PM2.5 (Particulate Matter 2.5)
-    """)
-
-    col1, col2 = st.columns(2)
-
-    with col1:
-        st.markdown("### Kolom Input")
-
-        st.markdown("""
-    - **Temperature** : Suhu udara lingkungan (°C).
-    - **Humidity** : Tingkat kelembaban udara (%).
-    - **PM2.5** : Konsentrasi partikel udara berukuran ≤ 2.5 pm.
-    - **PM10** : Konsentrasi partikel udara berukuran ≤ 10 pm.
-        """)
-
-    with col2:
-        st.markdown("### Kolom Input")
-
-        st.markdown("""
-    - **NO2** : Nitrogen Dioxide dari kendaraan dan industri.
-    - **SO2** : Sulfur Dioxide dari pembakaran bahan bakar.
-    - **CO** : Carbon Monoxide hasil emisi kendaraan.
-        """)
+    model = load_model(
+        reg_map[regresi_model]
+    )
 
     st.info("""
-    📌 File CSV/Excel yang diupload harus memiliki kolom:
+        Dataset harus memiliki kolom:
 
-    Temperature, Humidity, PM2.5, PM10, NO2, SO2, CO
-    """)
-
-    st.markdown("---")
+        Temperature,
+        Humidity,
+        PM10,
+        NO2,
+        SO2,
+        CO,
+        Proximity_to_Industrial_Areas
+        """)
 
     uploaded_file = st.file_uploader(
         "Upload CSV / Excel",
@@ -667,7 +631,7 @@ elif menu == "Prediksi CSV":
     )
 
     if uploaded_file is not None:
-        # Cek ekstensi file untuk menentukan cara membaca
+
         if uploaded_file.name.endswith(".csv"):
             data = pd.read_csv(uploaded_file)
         else:
@@ -676,16 +640,183 @@ elif menu == "Prediksi CSV":
         st.subheader("📋 Preview Dataset")
         st.dataframe(data.head())
 
-        st.write(f"Jumlah Data : {len(data)}")
+        st.write(
+            f"Jumlah Data : {len(data)}"
+        )
 
-    if "hasil_prediksi_csv" not in st.session_state:
-        st.session_state.hasil_prediksi_csv = None
+        if st.button("📈 Prediksi Semua Data"):
 
-    if st.button("📈 Prediksi Semua Data"):
+            fitur_model = [
+                "Temperature",
+                "Humidity",
+                "PM10",
+                "NO2",
+                "SO2",
+                "CO",
+                "Proximity_to_Industrial_Areas"
+            ]
 
-        if uploaded_file is None:
-            st.error("Silakan upload file CSV/Excel terlebih dahulu.")
-            st.stop()
+            if not all(
+                col in data.columns
+                for col in fitur_model
+            ):
+                st.error(
+                    "Kolom dataset tidak sesuai."
+                )
+                st.stop()
+
+            data_prediksi = data[
+                fitur_model
+            ]
+
+            hasil = model.predict(
+                data_prediksi
+            )
+
+            hasil_df = data.copy()
+
+            hasil_df["Prediksi_PM2.5"] = hasil
+
+            st.session_state.hasil_regresi = hasil_df 
+            if "hasil_regresi" not in st.session_state:
+                st.session_state.hasil_regresi = None
+
+                if st.session_state.hasil_regresi is not None:
+
+                    st.success(
+                    "✅ Prediksi berhasil"
+                )
+
+                st.subheader(
+                    "📊 Hasil Prediksi PM2.5"
+                )
+
+                st.dataframe(
+                    st.session_state.hasil_regresi,
+                    use_container_width=True
+                )
+                st.subheader("📈 Ringkasan Prediksi")
+
+                col1, col2, col3 = st.columns(3)
+
+                with col1:
+                    st.metric(
+                        "Jumlah Data",
+                        len(st.session_state.hasil_regresi)
+                    )
+
+                with col2:
+                    st.metric(
+                        "Rata-rata PM2.5",
+                        round(
+                            st.session_state.hasil_regresi[
+                                "Prediksi_PM2.5"
+                            ].mean(),
+                            2
+                        )
+                    )
+
+                with col3:
+                    st.metric(
+                        "PM2.5 Maksimum",
+                        round(
+                            st.session_state.hasil_regresi[
+                                "Prediksi_PM2.5"
+                            ].max(),
+                            2
+                        )
+                    )
+                    
+                    csv = (
+                        st.session_state.hasil_regresi
+                        .to_csv(index=False)
+                        .encode("utf-8")
+                    )
+
+                    st.download_button(
+                        label="💾 Simpan Hasil Prediksi",
+                        data=csv,
+                        file_name="hasil_regresi_pm25.csv",
+                        mime="text/csv"
+                    )
+
+                    fig, ax = plt.subplots(figsize=(8,4))
+
+                    ax.hist(
+                        st.session_state.hasil_regresi[
+                            "Prediksi_PM2.5"
+                        ],
+                        bins=20
+                    )
+
+                    ax.set_title(
+                        "Distribusi Prediksi PM2.5"
+                    )
+
+                    st.pyplot(fig)
+
+# Halaman Prediksi CSV Klasifikasi
+elif menu == "Prediksi CSV Klasifikasi":
+    st.title("📂 Prediksi CSV Klasifikasi")
+
+model_map = {
+    "Decision Tree HPO": "modelJb_DS-HPO.joblib",
+    "SVM": "modelJb_SVM.joblib",
+    "Neural Network": "modelJb_NN.joblib"
+}
+
+pilihan = st.selectbox(
+    "Pilih Model Klasifikasi",
+    list(model_map.keys())
+)
+
+model = load_model(
+    model_map[pilihan]
+)
+
+st.info("""
+Dataset harus memiliki kolom:
+
+Temperature,
+Humidity,
+PM2.5,
+PM10,
+NO2,
+SO2,
+CO,
+Proximity_to_Industrial_Areas
+""")
+
+uploaded_file = st.file_uploader(
+    "Upload CSV / Excel",
+    type=["csv", "xlsx", "xls"]
+)
+
+if uploaded_file is not None:
+
+    if uploaded_file.name.endswith(".csv"):
+        data = pd.read_csv(uploaded_file)
+    else:
+        data = pd.read_excel(uploaded_file)
+
+    st.subheader("📋 Preview Dataset")
+    st.dataframe(data.head())
+
+    st.write(
+        f"Jumlah Data : {len(data)}"
+    )
+
+    if st.button("🤖 Prediksi Semua Data"):
+
+        if "Air Quality" in data.columns:
+            data = data.drop(
+                columns=["Air Quality"]
+            )
+
+        if "Population_Density" in data.columns:
+            data = data.drop(
+                columns=["Population_Density"]
+            )
 
         fitur_model = [
             "Temperature",
@@ -694,73 +825,84 @@ elif menu == "Prediksi CSV":
             "PM10",
             "NO2",
             "SO2",
-            "CO"
+            "CO",
+            "Proximity_to_Industrial_Areas"
         ]
 
-        if not all(col in data.columns for col in fitur_model):
+        if not all(
+            col in data.columns
+            for col in fitur_model
+        ):
             st.error(
-                "Kolom pada file tidak sesuai.\n\n"
-                + ", ".join(fitur_model)
+                "Kolom dataset tidak sesuai."
             )
             st.stop()
 
-        data_prediksi = data[fitur_model]
-        hasil = model.predict(data_prediksi)
+        data_prediksi = data[
+            fitur_model
+        ]
+
+        hasil = model.predict(
+            data_prediksi
+        )
+
+        label = {
+            0: "Poor",
+            1: "Moderate",
+            2: "Good",
+            3: "Excellent"
+        }
+
         hasil_df = data.copy()
-        hasil_df["Prediksi_PM2.5"] = hasil
-        st.session_state.hasil_prediksi_csv = hasil_df.copy()
 
-        if st.session_state.hasil_prediksi_csv is not None:
-            st.success("✅ Prediksi berhasil dilakukan")
-            st.subheader("📊 Hasil Prediksi")
-            st.dataframe(
-                st.session_state.hasil_prediksi_csv,
-                use_container_width=True
+        hasil_df["Prediksi_Air_Quality"] = [
+            label.get(
+                int(x),
+                str(x)
             )
+            for x in hasil
+        ]
 
-        st.markdown("---")
+        st.session_state.hasil_klasifikasi = hasil_df
+        
+        if "hasil_klasifikasi" not in st.session_state:
+         st.session_state.hasil_klasifikasi = None
 
-        col1, col2, col3, col4 = st.columns(4)
+        if st.session_state.hasil_klasifikasi is not None:
 
-        with col1:
+           st.success(
+            "✅ Prediksi berhasil"
+           )
 
-            csv = st.session_state.hasil_prediksi_csv.to_csv(
-                index=False
-            ).encode("utf-8")
+        st.subheader(
+            "📊 Hasil Prediksi"
+        )
 
-            st.download_button(
-                label="💾 Simpan Hasil Prediksi",
-                data=csv,
-                file_name="hasil_prediksi_pm25.csv",
-                mime="text/csv",
-                use_container_width=True
-            )
+    st.dataframe(
+        st.session_state.hasil_klasifikasi,
+        use_container_width=True
+    )
+    st.subheader(
+    "📈 Distribusi Hasil Prediksi"
+)
 
-        with col2:
+summary = (
+    st.session_state.hasil_klasifikasi[
+        "Prediksi_Air_Quality"
+    ]
+    .value_counts()
+)
 
-            if st.button(
-                "➕ Tambah Prediksi Baru",
-                use_container_width=True
-            ):
+st.bar_chart(summary)
+csv = (
+    st.session_state.hasil_klasifikasi
+    .to_csv(index=False)
+    .encode("utf-8")
+)
 
-                st.session_state.hasil_prediksi_csv = None
-                st.rerun()
-
-        with col3:
-
-            st.metric(
-                "Jumlah Data",
-                len(st.session_state.hasil_prediksi_csv)
-            )
-
-        with col4:
-
-            st.metric(
-                "Rata-rata PM2.5",
-                round(
-                    st.session_state.hasil_prediksi_csv[
-                        "Prediksi_PM2.5"
-                    ].mean(),
-                    2
-                )
-            ) 
+st.download_button(
+    label="💾 Simpan Hasil Prediksi",
+    data=csv,
+    file_name="hasil_klasifikasi.csv",
+    mime="text/csv"
+)
