@@ -875,7 +875,40 @@ elif menu == "Prediksi CSV Klasifikasi":
             .value_counts()
         )
 
-        st.bar_chart(summary)
+        summary_df = summary.reset_index()
+        summary_df.columns = [
+            "Kategori",
+            "Jumlah"
+        ]
+
+        fig = px.bar(
+        summary_df,
+        x="Kategori",
+        y="Jumlah",
+        color="Kategori",
+        text="Jumlah",
+        color_discrete_map={
+            "Poor": "#ff4b4b",        # merah
+            "Moderate": "#ffa500",    # oranye
+            "Good": "#00cc66",        # hijau
+            "Excellent": "#3399ff"    # biru
+        }
+)
+
+        fig.update_traces(
+            textposition="outside"
+        )
+
+        fig.update_layout(
+            xaxis_title="Kategori",
+            yaxis_title="Jumlah Data",
+            showlegend=False
+        )
+
+        st.plotly_chart(
+            fig,
+            use_container_width=True
+        )
 
         col1, col2, col3 = st.columns(3)
 
