@@ -696,7 +696,7 @@ elif menu == "Prediksi CSV Regresi":
                 data_prediksi
             )
 
-            hasil_df = data.copy()
+            hasil_df = data_prediksi.copy()
 
             hasil_df["Prediksi_PM2.5"] = hasil
             
@@ -877,7 +877,6 @@ elif menu == "Prediksi CSV Klasifikasi":
 
         if st.button("🤖 Prediksi Semua Data"):
 
-            
 
             if "Population_Density" in data.columns:
                 data = data.drop(columns=["Population_Density"])
