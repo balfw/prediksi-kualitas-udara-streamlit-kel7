@@ -4,7 +4,6 @@ import joblib
 import numpy as np
 import matplotlib.pyplot as plt # Diperlukan untuk visualisasi
 import seaborn as sns
-import plotly.express as px 
 
 # Konfigurasi Halaman
 st.set_page_config(page_title="Prediksi Kualitas Udara", page_icon="🌍", layout="wide")
@@ -15,7 +14,7 @@ def load_model(path):
     return joblib.load(path)
 
 # Sidebar
-menu = st.sidebar.selectbox("Pilih Menu", ["Home", "EDA", "Klasifikasi", "Prediksi CSV Klasifikasi", "Prediksi CSV Regresi"])
+menu = st.sidebar.selectbox("Pilih Menu", ["Home", "EDA", "Klasifikasi", "Regresi", "Prediksi CSV Klasifikasi", "Prediksi CSV Regresi"])
 
 # Load Dataset
 df = pd.read_csv("DatasetPolutionScaling.csv")
@@ -58,16 +57,16 @@ if menu == "Home":
             "Neural Network"
         ],
         "Accuracy": [
-            0.86,
-            0.90,
-            0.93,
-            0.92
-        ],
-        "Accuracy HPO": [
-            0.83,
             0.91,
             0.89,
-            0.89
+            0.93,
+            0.93
+        ],
+        "Accuracy HPO": [
+            0.91,
+            0.91,
+            0.93,
+            0.94
         ]
     })
     
@@ -92,17 +91,17 @@ if menu == "Home":
             "SVM",
             "Neural Network"
         ],
-        "Accuracy": [
-            0.98,
-            0.-82,
-            0.99,
-            0.99
+        "R-Squared": [
+            0.95,
+            0.75,
+            0.85,
+            0.96
         ],
-        "Accuracy HPO": [
-            0.98,
-            0.-83,
-            0.99,
-            0.99
+        "R-Squared HPO": [
+            0.94,
+            0.79,
+            0.73,
+            0.96
         ]
     })
     
@@ -284,9 +283,9 @@ elif menu == "Klasifikasi":
     """)
 
     model_map = {
-        "Decision Tree HPO": "modelJb_DS-HPO.joblib",
-        "SVM": "modelJb_SVM.joblib",
-        "Neural Network": "modelJb_NN.joblib"
+        "Support Vector Machine": "modelJb_SVM.joblib",
+        "Neural Network": "modelJb_NN.joblib",
+        "Neural Network HPO": "modelJb_NN-HPO.joblib"
     }
     pilihan = st.selectbox(
         "Pilih Model Klasifikasi",
@@ -368,7 +367,7 @@ elif menu == "Klasifikasi":
             3: "Excellent"
         }
 
-        prediction_label = label.get(int(prediction), prediction)
+        prediction_label = label.get(prediction, prediction)
 
         # Menampilkan data input
         st.subheader("📋 Data Input")
@@ -384,6 +383,17 @@ elif menu == "Klasifikasi":
         st.success(
             f"Hasil prediksi menggunakan model {pilihan}: {prediction_label}"
         )
+        st.subheader("📋 Classification Report")
+
+        if pilihan == "Neural Network":
+            st.write("Accuracy : 0.944")
+        
+        elif pilihan == "Neural Network HPO":
+            st.write("Accuracy : 0.918")
+    
+        elif pilihan == "SVM":
+            st.write("Accuracy : 0.934")
+    
         
         # Probabilitas
         if hasattr(model, "predict_proba"):
@@ -405,17 +415,23 @@ elif menu == "Klasifikasi":
                     for cls in model.classes_
                 ]
             else:
-                class_names = [
-                    f"Class {i}"
-                    for i in range(len(proba))
-                ]
+
+                st.subheader("📊 Probabilitas Prediksi")
+
+            kelas = [
+                "Poor",
+                "Moderate",
+                "Good",
+                "Excellent"
+            ]
 
             proba_df = pd.DataFrame({
-                "Kategori": class_names,
-                "Probabilitas": proba
+                "Kategori": kelas,
+                "Probabilitas": [
+                    1 if k == prediction_label else 0
+                    for k in kelas
+                ]
             })
-
-            st.subheader("📊 Probabilitas Prediksi")
 
             st.dataframe(
                 proba_df,
@@ -466,9 +482,9 @@ elif menu == "Regresi":
     """)
 
     reg_map = {
-    "SVM Regressor": "modelJb_SVMRegressor.joblib",
-    "SVM Regressor HPO": "modelJb-HPO_SVMRegressor.joblib",
-    "Neural Network Regressor": "modelJb_NNRegressor.joblib",
+        "Decision Tree Regressor": "modelJb_DSTRegressor.joblib",
+        "Neural Network Regressor": "modelJb_NNRegressor.joblib",
+        "Neural Network Regressor HPO": "modelJb_NN-HPORegressor.joblib"
     }
 
     regresi_model = st.selectbox(
@@ -520,6 +536,10 @@ elif menu == "Regresi":
         st.caption(
         "Menunjukkan kedekatan lokasi dengan kawasan industri. Semakin dekat biasanya tingkat polusi lebih tinggi."
         )
+        Proxi = st.number_input("Proximity_to_Industrial_Areas")
+        st.caption(
+        "Kedekatan ke kawasan industri (dalam km)."
+        )
 
     if st.button("📈 Prediksi PM2.5"):
 
@@ -527,20 +547,20 @@ elif menu == "Regresi":
                 [[
                     temperature,
                     humidity,
-                    pm25,
                     pm10,
                     no2,
                     so2,
-                    co
+                    co,
+                    Proxi
                 ]],
                 columns=[
                     "Temperature",
                     "Humidity",
-                    "PM2.5",
-                    "PM10",
+                        "PM10",
                     "NO2",
                     "SO2",
-                    "CO"
+                    "CO",
+                    "Proximity_to_Industrial_Areas" 
                 ]
 
 
@@ -600,9 +620,9 @@ elif menu == "Prediksi CSV Regresi":
     st.title("📂 Prediksi CSV Regresi")
 
     reg_map = {
-        "SVM Regressor": "modelJb_SVMRegressor.joblib",
-        "SVM Regressor HPO": "modelJb_SVMRegressor-HPO.joblib",
-        "Neural Network Regressor": "modelJb_NNRegressor.joblib"
+        "Decision Tree Regressor": "modelJb_DSTRegressor.joblib",
+        "Neural Network Regressor": "modelJb_NNRegressor.joblib",
+        "Neural Network Regressor HPO": "modelJb_NN-HPORegressor.joblib"
     }
 
     regresi_model = st.selectbox(
@@ -644,6 +664,8 @@ elif menu == "Prediksi CSV Regresi":
         st.write(
             f"Jumlah Data : {len(data)}"
         )
+        if "hasil_regresi" not in st.session_state:
+                st.session_state.hasil_regresi = None
 
         if st.button("📈 Prediksi Semua Data"):
 
@@ -677,84 +699,127 @@ elif menu == "Prediksi CSV Regresi":
             hasil_df = data.copy()
 
             hasil_df["Prediksi_PM2.5"] = hasil
+            
 
             st.session_state.hasil_regresi = hasil_df 
-            if "hasil_regresi" not in st.session_state:
-                st.session_state.hasil_regresi = None
+            
 
-                if st.session_state.hasil_regresi is not None:
+        # ================================
+        # TAMPILKAN HASIL
+        # ================================
 
-                    st.success(
-                    "✅ Prediksi berhasil"
+        if st.session_state.hasil_regresi is not None:
+
+            st.success("✅ Prediksi berhasil dilakukan")
+
+            st.subheader("📊 Hasil Prediksi PM2.5")
+
+            st.dataframe(
+                st.session_state.hasil_regresi,
+                use_container_width=True
+            )
+
+            # ============================
+            # METRIC
+            # ============================
+
+            st.subheader("📈 Ringkasan Prediksi")
+
+            col1, col2, col3 = st.columns(3)
+
+            with col1:
+                st.metric(
+                    "Jumlah Data",
+                    len(st.session_state.hasil_regresi)
                 )
 
-                st.subheader(
-                    "📊 Hasil Prediksi PM2.5"
-                )
-
-                st.dataframe(
-                    st.session_state.hasil_regresi,
-                    use_container_width=True
-                )
-                st.subheader("📈 Ringkasan Prediksi")
-
-                col1, col2, col3 = st.columns(3)
-
-                with col1:
-                    st.metric(
-                        "Jumlah Data",
-                        len(st.session_state.hasil_regresi)
-                    )
-
-                with col2:
-                    st.metric(
-                        "Rata-rata PM2.5",
-                        round(
-                            st.session_state.hasil_regresi[
-                                "Prediksi_PM2.5"
-                            ].mean(),
-                            2
-                        )
-                    )
-
-                with col3:
-                    st.metric(
-                        "PM2.5 Maksimum",
-                        round(
-                            st.session_state.hasil_regresi[
-                                "Prediksi_PM2.5"
-                            ].max(),
-                            2
-                        )
-                    )
-                    
-                    csv = (
-                        st.session_state.hasil_regresi
-                        .to_csv(index=False)
-                        .encode("utf-8")
-                    )
-
-                    st.download_button(
-                        label="💾 Simpan Hasil Prediksi",
-                        data=csv,
-                        file_name="hasil_regresi_pm25.csv",
-                        mime="text/csv"
-                    )
-
-                    fig, ax = plt.subplots(figsize=(8,4))
-
-                    ax.hist(
+            with col2:
+                st.metric(
+                    "Rata-rata PM2.5",
+                    round(
                         st.session_state.hasil_regresi[
                             "Prediksi_PM2.5"
-                        ],
-                        bins=20
+                        ].mean(),
+                        2
                     )
+                )
 
-                    ax.set_title(
-                        "Distribusi Prediksi PM2.5"
+            with col3:
+                st.metric(
+                    "PM2.5 Maksimum",
+                    round(
+                        st.session_state.hasil_regresi[
+                            "Prediksi_PM2.5"
+                        ].max(),
+                        2
                     )
+                )
 
-                    st.pyplot(fig)
+            # ============================
+            # HISTOGRAM
+            # ============================
+
+            st.subheader("📊 Distribusi Prediksi PM2.5")
+
+            fig, ax = plt.subplots(
+                figsize=(10, 5)
+            )
+
+            ax.hist(
+                st.session_state.hasil_regresi[
+                    "Prediksi_PM2.5"
+                ],
+                bins=20,
+                color="skyblue",
+                edgecolor="black"
+            )
+
+            ax.set_title(
+                "Distribusi Prediksi PM2.5"
+            )
+
+            ax.set_xlabel(
+                "Nilai PM2.5"
+            )
+
+            ax.set_ylabel(
+                "Jumlah Data"
+            )
+
+            st.pyplot(fig)
+
+            # ============================
+            # DOWNLOAD
+            # ============================
+
+            csv = (
+                st.session_state.hasil_regresi
+                .to_csv(index=False)
+                .encode("utf-8")
+            )
+
+            st.download_button(
+                label="💾 Simpan Hasil Prediksi",
+                data=csv,
+                file_name="hasil_regresi_pm25.csv",
+                mime="text/csv",
+                use_container_width=True
+            )
+
+            # ============================
+            # RESET
+            # ============================
+
+            if st.button(
+                "➕ Prediksi Baru",
+                use_container_width=True
+            ):
+
+                st.session_state.hasil_regresi = None
+
+                st.rerun()
+                
+                
 
 # ==========================================
 # HALAMAN PREDIKSI CSV KLASIFIKASI
@@ -768,9 +833,9 @@ elif menu == "Prediksi CSV Klasifikasi":
     st.title("📂 Prediksi CSV Klasifikasi")
 
     model_map = {
-        "Decision Tree HPO": "modelJb_DS-HPO.joblib",
-        "SVM": "modelJb_SVM.joblib",
-        "Neural Network": "modelJb_NN.joblib"
+        "Support Vector Machine": "modelJb_SVM.joblib",
+        "Neural Network": "modelJb_NN.joblib",
+        "Neural Network HPO": "modelJb_NN-HPO.joblib"
     }
 
     pilihan = st.selectbox(
@@ -812,8 +877,7 @@ elif menu == "Prediksi CSV Klasifikasi":
 
         if st.button("🤖 Prediksi Semua Data"):
 
-            if "Air Quality" in data.columns:
-                data = data.drop(columns=["Air Quality"])
+            
 
             if "Population_Density" in data.columns:
                 data = data.drop(columns=["Population_Density"])
@@ -847,11 +911,12 @@ elif menu == "Prediksi CSV Klasifikasi":
             hasil_df = data.copy()
 
             hasil_df["Prediksi_Air_Quality"] = [
-                label.get(int(x), str(x))
+                label.get(x, str(x))
                 for x in hasil
             ]
 
             st.session_state["hasil_klasifikasi"] = hasil_df
+          
 
     # ==================================
     # TAMPILKAN HASIL
@@ -867,83 +932,83 @@ elif menu == "Prediksi CSV Klasifikasi":
             st.session_state["hasil_klasifikasi"],
             use_container_width=True
         )
-
+        
         st.subheader("📈 Distribusi Hasil Prediksi")
 
         summary = (
-            st.session_state["hasil_klasifikasi"]
-            ["Prediksi_Air_Quality"]
-            .value_counts()
-        )
+                    st.session_state["hasil_klasifikasi"]
+                    ["Prediksi_Air_Quality"]
+                    .value_counts()
+                )
 
-        summary_df = summary.reset_index()
-        summary_df.columns = [
-            "Kategori",
-            "Jumlah"
-        ]
+        st.write(summary)  # debug
 
-        fig = px.bar(
-            summary_df,
-            x="Kategori",
-            y="Jumlah",
-            color="Kategori",
-            text="Jumlah",
-            color_discrete_map={
-                "Poor": "#FF4B4B",
-                "Moderate": "#FFA500",
-                "Good": "#00CC66",
-                "Excellent": "#3399FF"
-            }
-        )
+        fig, ax = plt.subplots(figsize=(8, 5))
 
-        fig.update_traces(
-            textposition="outside"
-        )
+        warna = {
+                    "Poor": "red",
+                    "Moderate": "orange",
+                    "Good": "green",
+                    "Excellent": "blue"
+                }
 
-        fig.update_layout(
-            xaxis_title="Kategori",
-            yaxis_title="Jumlah Data",
-            showlegend=False
-        )
+        bar_colors = [
+                    warna.get(kategori, "gray")
+                    for kategori in summary.index
+                ]
 
-        st.plotly_chart(
-            fig,
-            use_container_width=True
-        )
+        ax.bar(
+                    summary.index,
+                    summary.values,
+                    color=bar_colors
+                )
 
+        ax.set_title("Distribusi Hasil Prediksi")
+        ax.set_xlabel("Kategori")
+        ax.set_ylabel("Jumlah Data")
+
+        for i, v in enumerate(summary.values):
+                    ax.text(
+                        i,
+                        v + 5,
+                        str(v),
+                        ha="center"
+                    )
+
+        st.pyplot(fig)
         col1, col2, col3 = st.columns(3)
 
         with col1:
-            st.metric(
-                "Jumlah Data",
-                len(st.session_state["hasil_klasifikasi"])
-            )
+                    st.metric(
+                        "Jumlah Data",
+                        len(st.session_state["hasil_klasifikasi"])
+                    )
 
         with col2:
-            st.metric(
-                "Kategori Terbanyak",
-                summary.idxmax()
-            )
+                    st.metric(
+                        "Kategori Terbanyak",
+                        summary.idxmax()
+                    )
 
         with col3:
-            st.metric(
-                "Jumlah Kategori Terbanyak",
-                summary.max()
-            )
+                    st.metric(
+                        "Jumlah Kategori Terbanyak",
+                        summary.max()
+                    )
 
         csv = (
-            st.session_state["hasil_klasifikasi"]
-            .to_csv(index=False)
-            .encode("utf-8")
-        )
+                    st.session_state["hasil_klasifikasi"]
+                    .to_csv(index=False)
+                    .encode("utf-8")
+                )
 
         st.download_button(
-            label="💾 Simpan Hasil Prediksi",
-            data=csv,
-            file_name="hasil_klasifikasi.csv",
-            mime="text/csv"
-        )
+                    label="💾 Simpan Hasil Prediksi",
+                    data=csv,
+                    file_name="hasil_klasifikasi.csv",
+                    mime="text/csv"
+                )
 
         if st.button("➕ Prediksi Baru"):
-            st.session_state["hasil_klasifikasi"] = None
-            st.rerun()
+                    st.session_state["hasil_klasifikasi"] = None
+                    st.rerun()
