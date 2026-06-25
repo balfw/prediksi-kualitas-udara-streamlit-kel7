@@ -37,7 +37,56 @@ if menu == "Home":
         Dengan melakukan prediksi dini, kita dapat mengambil langkah mitigasi yang tepat.
         """)
     with col2:
-        st.info("💡 **Catatan:** Input data yang dimasukkan harus sudah sesuai dengan skala yang digunakan dalam proses pelatihan model.")
+        st.subheader("Bagaimana Prediksi Dilakukan?")
+        st.write("""
+        Prediksi kualitas udara dilakukan menggunakan berbagai algoritma machine learning yang telah dilatih dengan data historis kualitas udara dan parameter lingkungan.
+        """)
+    with col1:
+        st.subheader("👨‍💻 Biodata Kelompok 7")
+        st.markdown("""
+        **📚 Mata Kuliah**
+        - Dasar Ilmu Data
+
+        **📝 Judul Tugas Besar**
+        - Prediksi Kualitas Udara Menggunakan Algoritma Machine Learning Berdasarkan Data Polusi Udara
+
+        **🏫 Kelas**
+        - D4 Sistem Informasi Kota Cerdas (SIKC) 48-05
+
+        **👥 Anggota Kelompok**
+        | No | Nama | NIM |
+        |:--:|-------------------------|--------------|
+        | 1 | Iqbal Fajar Wirawan | 707012400101 |
+        | 2 | Haikal Dwi Anggara | 707012400113 |
+        | 3 | Elvi | 707012400033 |
+        """)
+    with col2:
+        st.subheader("📊 Informasi Dataset")
+        st.markdown("""
+        **Sumber Dataset**
+        - Air Quality and Pollution Assessment Dataset
+
+        **Platform**
+        - Kaggle
+
+        **Deskripsi**
+        Dataset ini berisi berbagai parameter lingkungan seperti suhu, kelembapan,
+        konsentrasi PM2.5, PM10, NO₂, SO₂, CO, serta faktor lingkungan lainnya yang
+        digunakan untuk memprediksi kualitas udara menggunakan algoritma Machine Learning.
+
+        **Target Prediksi**
+        - Klasifikasi Kualitas Udara
+        - Prediksi Konsentrasi PM2.5 (Regresi)
+        """)
+
+        st.markdown(
+            "[🔗 Lihat Dataset di Kaggle](https://www.kaggle.com/datasets/mujtabamatin/air-quality-and-pollution-assessment)"
+        )
+
+        st.info(
+            "💡 **Catatan:** Data yang dimasukkan harus menggunakan skala yang sama seperti data pelatihan model agar hasil prediksi lebih akurat."
+        )
+        
 
     st.divider()
     st.subheader("Fitur Utama")
