@@ -96,75 +96,7 @@ if menu == "Home":
     
     st.divider()
 
-    st.subheader("🏆 Perbandingan Model Klasifikasi")
-
-    performa = pd.DataFrame({
-        "Model": [
-            "KNN",
-            "Decision Tree",
-            "SVM",
-            "Neural Network"
-        ],
-        "Accuracy": [
-            0.91,
-            0.89,
-            0.93,
-            0.93
-        ],
-        "Accuracy HPO": [
-            0.91,
-            0.91,
-            0.93,
-            0.94
-        ]
-    })
     
-
-    st.dataframe(performa)
-
-    st.bar_chart(
-        performa.set_index("Model")
-    )
-
-    st.info("""
-    Grafik ini digunakan untuk membandingkan performa
-    setiap algoritma klasifikasi berdasarkan nilai akurasi.
-    """)
-    
-    st.subheader("🏆 Perbandingan Model Regresi")
-
-    performa = pd.DataFrame({
-        "Model": [
-            "KNN",
-            "Decision Tree",
-            "SVM",
-            "Neural Network"
-        ],
-        "R-Squared": [
-            0.95,
-            0.75,
-            0.85,
-            0.96
-        ],
-        "R-Squared HPO": [
-            0.94,
-            0.79,
-            0.73,
-            0.96
-        ]
-    })
-    
-
-    st.dataframe(performa)
-
-    st.bar_chart(
-        performa.set_index("Model")
-    )
-
-    st.info("""
-    Grafik ini digunakan untuk membandingkan performa
-    setiap algoritma regresi berdasarkan nilai akurasi.
-    """)
 
 # Halaman EDA
 
@@ -533,7 +465,7 @@ elif menu == "Regresi":
     reg_map = {
         "Decision Tree Regressor": "modelJb_DSTRegressor.joblib",
         "Neural Network Regressor": "modelJb_NNRegressor.joblib",
-        "Neural Network Regressor HPO": "modelJb_NN-HPORegressor.joblib"
+        "Neural Network Regressor HPO": "modelJb-HPO_NNRegressor.joblib"
     }
 
     regresi_model = st.selectbox(
@@ -581,10 +513,7 @@ elif menu == "Regresi":
         st.caption(
         " Carbon Monoxide merupakan gas beracun yang banyak dihasilkan kendaraan bermotor."
         )
-        pm25 = st.number_input("PM2.5")
-        st.caption(
-        "Menunjukkan kedekatan lokasi dengan kawasan industri. Semakin dekat biasanya tingkat polusi lebih tinggi."
-        )
+        
         Proxi = st.number_input("Proximity_to_Industrial_Areas")
         st.caption(
         "Kedekatan ke kawasan industri (dalam km)."
@@ -671,7 +600,7 @@ elif menu == "Prediksi CSV Regresi":
     reg_map = {
         "Decision Tree Regressor": "modelJb_DSTRegressor.joblib",
         "Neural Network Regressor": "modelJb_NNRegressor.joblib",
-        "Neural Network Regressor HPO": "modelJb_NN-HPORegressor.joblib"
+        "Neural Network Regressor HPO": "modelJb-HPO_NNRegressor.joblib"
     }
 
     regresi_model = st.selectbox(
